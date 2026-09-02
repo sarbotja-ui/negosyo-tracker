@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Negosyo Tracker Pro</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- PWA Manifest Link -->
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#059669">
+    <link rel="apple-touch-icon" href="icon.png">
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans min-h-screen pb-12 select-none">
+
+    <!-- Header -->
+    <header class="bg-emerald-600 text-white p-4 shadow-md text-center sticky top-0 z-50">
+        <div class="max-w-md mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-lg font-bold text-left"><i class="fa-solid fa-wallet mr-1"></i> Negosyo Tracker</h1>
+                <p class="text-[10px] text-emerald-100 text-left">Professional Daily Monitor</p>
+            </div>
+            <!-- Install App Button (Hidden by default, shows when installable) -->
+            <button id="installBtn" style="display: none;" onclick="installApp()" class="bg-emerald-700 text-white text-xs px-2.5 py-1.5 rounded-lg font-semibold hover:bg-emerald-800 transition border border-emerald-500">
+                <i class="fa-solid fa-download mr-1"></i> Install App
+            </button>
+        </div>
+    </header>
+
+    <main class="max-w-md mx-auto p-4 mt-2 space-y-4">
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-3 gap-2">
+            <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 text-center">
+                <span class="text-xs text-gray-500 block">Total Sales</span>
+                <span id="summarySales" class="text-emerald-600 font-bold text-sm">₱0.00</span>
+            </div>
+            <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 text-center">
+                <span class="text-xs text-gray-500 block">Expenses</span>
+                <span id="summaryExpense" class="text-rose-600 font-bold text-sm">₱0.00</span>
+            </div>
+            <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 text-center">
+                <span class="text-xs text-gray-500 block">Net Income</span>
+                <span id="summaryNet" class="text-blue-600 font-bold text-sm">₱0.00</span>
+            </div>
+        </div>
+
+        <!-- Filter & Actions Bar -->
+        <div class="bg-white p-3 rounded-xl shadow-sm border border-gray-100 flex items-center justify-between gap-2">
+            <div>
+                <label class="block text-[10px] uppercase font-bold text-gray-400 mb-1">Filter Date</label>
+                <input type="date" id="filterDate" onchange="filterTransactions()" 
+                    class="p-1.5 border border-gray-200 rounded-lg text-xs focus:outline-emerald-500 bg-gray-50">
+            </div>
+            <div class="flex items-end gap-1.5">
+                <button onclick="resetFilter()" title="Show All" class="px-2.5 py-1.5 bg-gray-100 text-gray-600 rounded-lg text-xs hover:bg-gray-200 transition">
+                    <i class="fa-solid fa-rotate-left"></i> All
+                </button>
+                <button onclick="exportToCSV()" title="Export to CSV/Excel" class="px-2.5 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg text-xs font-semibold hover:bg-emerald-100 transition">
+                    <i class="fa-solid fa-file-excel mr-1"></i> Export
+                </button>
+            </div>
+        </div>
+
+        <!-- Input Form Card -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+            <h2 class="text-sm font-semibold text-gray-700 mb-3"><i class="fa-solid fa-circle-plus mr-1"></i> Add Transaction</h2>
+            <form id="transactionForm" class="space-y-3">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Type</label>
+                    <select id="type" onchange="toggleCategories()" class="w-full p-2 border border-gray-200 rounded-lg text-sm focus:outline-emerald-500">
+                        <option value="income">Sales (Pumasok na Pera)</option>
+                        <option value="expense">Expense (Ginastos/Puhunan)</option>
+                    </select>
+                </div>
+
+                <!-- Category Dropdown -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Category</label>
+                    <select id="category" class="w-full p-2 border border-gray-200 rounded-lg text-sm focus:outline-emerald-500">
+                        <!-- Dynamic Options loaded via JS -->
+                    </select>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Description / Notes</label>
+                    <input type="text" id="description" placeholder="e.g., Benta sa umaga, Bili ng yelo" required
+                        class="w-full p-2 border border-gray-200 rounded-lg text-sm focus:outline-emerald-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Amount (₱)</label>
+                    <input type="number" id="amount" step="0.01" placeholder="0.00" required
+                        class="w-full p-2 border border-gray-200 rounded-lg text-sm focus:outline-emerald-500">
+                </div>
+                <button type="submit" class="w-full bg-emerald-600 text-white p-2.5 rounded-lg text-sm font-semibold hover:bg-emerald-700 transition shadow-sm">
+                    Save Transaction
+                </button>
+            </form>
+        </div>
+
+        <!-- History Section -->
+        <div class="bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+            <div class="flex justify-between items-center mb-3">
+                <h2 class="text-sm font-semibold text-gray-700"><i class="fa-solid fa-clock-rotate-left mr-1"></i> History</h2>
+                <button onclick="clearData()" class="text-xs text-rose-500 hover:underline">Clear All</button>
+            </div>
+            <div id="transactionList" class="space-y-2 max-h-60 overflow-y-auto pr-1">
+                <!-- Dynamic Items will load here -->
+            </div>
+        </div>
+
+    </main>
+
+    <!-- JavaScript Logic -->
+    <script>
+        let transactions = JSON.parse(localStorage.getItem('negosyo_transactions_pro')) || [];
+
+        const categories = {
+            income: ['Store Sales', 'Online Order', 'GCash Cash-In', 'Others (Sales)'],
+            expense: ['Inventory / Puhunan', 'Utilities (Kuryente/Tubig)', 'Transport / Transpo', 'Supplies', 'Others (Expense)']
+        };
+
+        const form = document.getElementById('transactionForm');
+        const typeInput = document.getElementById('type');
+        const categoryInput = document.getElementById('category');
+        const descInput = document.getElementById('description');
+        const amountInput = document.getElementById('amount');
+        const filterDateInput = document.getElementById('filterDate');
+        
+        const summarySales = document.getElementById('summarySales');
+        const summaryExpense = document.getElementById('summaryExpense');
+        const summaryNet = document.getElementById('summaryNet');
+        const transactionList = document.getElementById('transactionList');
+
+        // Populate Categories based on Type
+        function toggleCategories() {
+            const selectedType = typeInput.value;
+            categoryInput.innerHTML = '';
+            categories[selectedType].forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat;
+                opt.textContent = cat;
+                categoryInput.appendChild(opt);
+            });
+        }
+
+        toggleCategories();
+
+        // Form Submit Handler
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const now = new Date();
+            const dateString = now.toISOString().split('T')[0]; 
+            const timeString = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+
+            const newTx = {
+                id: Date.now(),
+                type: typeInput.value,
+                category: categoryInput.value,
+                description: descInput.value,
+                amount: parseFloat(amountInput.value),
+                date: dateString,
+                timeDisplay: `${now.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${timeString}`
+            };
+
+            transactions.unshift(newTx);
+            saveAndRefresh();
+            form.reset();
+            toggleCategories();
+        });
+
+        function deleteTx(id) {
+            transactions = transactions.filter(tx => tx.id !== id);
+            saveAndRefresh();
+        }
+
+        function clearData() {
+            if(confirm('Are you sure you want to clear all records?')) {
+                transactions = [];
+                saveAndRefresh();
+            }
+        }
+
+        function saveAndRefresh() {
+            localStorage.setItem('negosyo_transactions_pro', JSON.stringify(transactions));
+            renderUI(transactions);
+        }
+
+        function filterTransactions() {
+            const selectedDate = filterDateInput.value;
+            if (!selectedDate) {
+                renderUI(transactions);
+                return;
+            }
+            const filtered = transactions.filter(tx => tx.date === selectedDate);
+            renderUI(filtered);
+        }
+
+        function resetFilter() {
+            filterDateInput.value = '';
+            renderUI(transactions);
+        }
+
+        function exportToCSV() {
+            if (transactions.length === 0) {
+                alert('No transactions to export yet!');
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,ID,Type,Category,Description,Amount,Date\n";
+            transactions.forEach(tx => {
+                let row = [tx.id, tx.type, `"${tx.category}"`, `"${tx.description}"`, tx.amount, tx.date];
+                csvContent += row.join(",") + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", `negosyo_report_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function renderUI(dataToRender) {
+            transactionList.innerHTML = '';
+            
+            let totalSales = 0;
+            let totalExpense = 0;
+
+            if (dataToRender.length === 0) {
+                transactionList.innerHTML = `<p class="text-xs text-gray-400 text-center py-4">No transactions found.</p>`;
+            }
+
+            dataToRender.forEach(tx => {
+                if (tx.type === 'income') {
+                    totalSales += tx.amount;
+                } else {
+                    totalExpense += tx.amount;
+                }
+
+                const itemHTML = `
+                    <div class="flex justify-between items-center p-2.5 bg-gray-50 rounded-xl border border-gray-100 text-sm">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="font-medium text-gray-800">${tx.description}</span>
+                                <span class="text-[10px] bg-gray-200 text-gray-600 px-1.5 py-0.5 rounded-md">${tx.category}</span>
+                            </div>
+                            <span class="text-[10px] text-gray-400">${tx.timeDisplay}</span>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="font-semibold ${tx.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}">
+                                ${tx.type === 'income' ? '+' : '-'}₱${tx.amount.toFixed(2)}
+                            </span>
+                            <button onclick="deleteTx(${tx.id})" class="text-gray-300 hover:text-rose-500 text-xs">
+                                <i class="fa-solid fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                transactionList.innerHTML += itemHTML;
+            });
+
+            const netIncome = totalSales - totalExpense;
+
+            summarySales.innerText = `₱${totalSales.toFixed(2)}`;
+            summaryExpense.innerText = `₱${totalExpense.toFixed(2)}`;
+            summaryNet.innerText = `₱${netIncome.toFixed(2)}`;
+            
+            summaryNet.className = netIncome < 0 ? "text-rose-600 font-bold text-sm" : "text-blue-600 font-bold text-sm";
+        }
+
+        renderUI(transactions);
+
+        // PWA Installation Trigger Logic
+        let deferredPrompt;
+        const installBtn = document.getElementById('installBtn');
+
+        window.addEventListener('beforeinstallprompt', (e) => {
+            e.preventDefault();
+            deferredPrompt = e;
+            installBtn.style.display = 'block'; // Show install button
+        });
+
+        function installApp() {
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then((choiceResult) => {
+                    if (choiceResult.outcome === 'accepted') {
+                        console.log('User accepted the install prompt');
+                    }
+                    deferredPrompt = null;
+                    installBtn.style.display = 'none';
+                });
+            }
+        }
+
+        // Register Service Worker for offline capability
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('sw.js')
+                    .then(reg => console.log('Service Worker registered!'))
+                    .catch(err => console.log('Service Worker registration failed: ', err));
+            });
+        }
+    </script>
+</body>
+</html>
